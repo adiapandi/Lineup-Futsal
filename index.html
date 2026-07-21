@@ -742,6 +742,23 @@
     clone.removeAttribute('id');
     clone.removeAttribute('style');
 
+    // presentation attributes like fill="var(--court)" don't resolve once the
+    // svg is detached into its own document for export, so swap them for the
+    // real hex values here.
+    const COLOR_MAP = {
+      '--bg':'#0A1F1F', '--panel':'#123B3C', '--panel-2':'#0F3233',
+      '--court':'#0E4243', '--court-deep':'#0B3536', '--line':'#EDE6D6',
+      '--accent':'#FF6B35', '--accent-2':'#FFD23F', '--text':'#EAF2EF',
+      '--muted':'#7FA69E', '--danger':'#E85D4C'
+    };
+    ['fill','stroke'].forEach(attr => {
+      clone.querySelectorAll(`[${attr}]`).forEach(node => {
+        const val = node.getAttribute(attr);
+        const m = val && val.match(/var\((--[a-zA-Z0-9-]+)\)/);
+        if (m && COLOR_MAP[m[1]]) node.setAttribute(attr, COLOR_MAP[m[1]]);
+      });
+    });
+
     // resolved (non-variable) styles so the court renders correctly once detached
     const styleEl = document.createElementNS(SVG_NS,'style');
     styleEl.textContent = `
