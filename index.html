@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Line Up Futsal</title>
+<title>Starting Line Up</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Oswald:wght@500;600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 <style>
@@ -111,6 +111,37 @@
     background:var(--accent-2);
     border-color:var(--accent-2);
     color:#1a1400;
+  }
+
+  .sport-row{
+    display:flex;
+    align-items:center;
+    gap:10px;
+    margin-bottom:14px;
+    flex-wrap:wrap;
+  }
+  .sport-row .label{
+    font-family:'Oswald',sans-serif;
+    text-transform:uppercase;
+    font-size:12px;
+    letter-spacing:1px;
+    color:var(--muted);
+  }
+  .sport-chip{
+    border:1px solid var(--panel);
+    background:var(--panel-2);
+    color:var(--text);
+    font-family:'Oswald',sans-serif;
+    font-size:14px;
+    padding:7px 14px;
+    border-radius:8px;
+    cursor:pointer;
+    transition:all .15s ease;
+  }
+  .sport-chip.active{
+    background:var(--accent);
+    border-color:var(--accent);
+    color:#1a0e08;
   }
 
   .layout{
@@ -431,7 +462,7 @@
 <div class="wrap">
   <header class="top">
     <div>
-      <h1>Line<span>Up</span> Futsal</h1>
+      <h1>Starting Line<span>Up</span></h1>
       <div class="subtitle">Susun formasi tim kamu — sentuh posisi, lalu pilih pemain</div>
     </div>
     <div class="view-toggle">
@@ -440,11 +471,14 @@
     </div>
   </header>
 
-  <div class="formation-row">
+  <div class="sport-row">
+    <span class="label">Olahraga</span>
+    <button class="sport-chip" data-sport="futsal">Futsal</button>
+    <button class="sport-chip" data-sport="minisoccer">Mini Soccer 7v7</button>
+  </div>
+
+  <div class="formation-row" id="formationRow">
     <span class="label">Formasi</span>
-    <button class="formation-chip" data-f="1-2-1">1-2-1</button>
-    <button class="formation-chip" data-f="2-2">2-2</button>
-    <button class="formation-chip" data-f="3-1">3-1</button>
   </div>
 
   <div class="layout" id="courtLayout">
@@ -492,33 +526,79 @@
   // ---- state ----
   let players = []; // {id, name, number}
   let pidCounter = 1;
+  let currentSport = 'futsal';
   let formation = '1-2-1';
   let assignments = {}; // slotId -> playerId
   let selectedSlot = null;
 
-  const FORMATIONS = {
-    '1-2-1': [
-      {id:'gk', label:'Kiper', x:200, y:565},
-      {id:'anchor', label:'Anchor', x:200, y:430},
-      {id:'flankL', label:'Ala Kiri', x:85, y:290},
-      {id:'flankR', label:'Ala Kanan', x:315, y:290},
-      {id:'pivot', label:'Pivot', x:200, y:130},
-    ],
-    '2-2': [
-      {id:'gk', label:'Kiper', x:200, y:565},
-      {id:'defL', label:'Bek Kiri', x:120, y:420},
-      {id:'defR', label:'Bek Kanan', x:280, y:420},
-      {id:'flankL', label:'Ala Kiri', x:110, y:190},
-      {id:'flankR', label:'Ala Kanan', x:290, y:190},
-    ],
-    '3-1': [
-      {id:'gk', label:'Kiper', x:200, y:565},
-      {id:'defL', label:'Bek Kiri', x:90, y:430},
-      {id:'defC', label:'Bek Tengah', x:200, y:450},
-      {id:'defR', label:'Bek Kanan', x:310, y:430},
-      {id:'pivot', label:'Pivot', x:200, y:150},
-    ],
+  const SPORTS = {
+    futsal: {
+      label: 'Futsal',
+      maxPlayers: 10,
+      courtType: 'futsal',
+      formations: {
+        '1-2-1': [
+          {id:'gk', label:'Kiper', x:200, y:565},
+          {id:'anchor', label:'Anchor', x:200, y:430},
+          {id:'flankL', label:'Ala Kiri', x:85, y:290},
+          {id:'flankR', label:'Ala Kanan', x:315, y:290},
+          {id:'pivot', label:'Pivot', x:200, y:130},
+        ],
+        '2-2': [
+          {id:'gk', label:'Kiper', x:200, y:565},
+          {id:'defL', label:'Bek Kiri', x:120, y:420},
+          {id:'defR', label:'Bek Kanan', x:280, y:420},
+          {id:'flankL', label:'Ala Kiri', x:110, y:190},
+          {id:'flankR', label:'Ala Kanan', x:290, y:190},
+        ],
+        '3-1': [
+          {id:'gk', label:'Kiper', x:200, y:565},
+          {id:'defL', label:'Bek Kiri', x:90, y:430},
+          {id:'defC', label:'Bek Tengah', x:200, y:450},
+          {id:'defR', label:'Bek Kanan', x:310, y:430},
+          {id:'pivot', label:'Pivot', x:200, y:150},
+        ],
+      },
+    },
+    minisoccer: {
+      label: 'Mini Soccer 7v7',
+      maxPlayers: 12,
+      courtType: 'soccer',
+      formations: {
+        '2-3-1': [
+          {id:'gk', label:'Kiper', x:200, y:565},
+          {id:'defL', label:'Bek Kiri', x:110, y:470},
+          {id:'defR', label:'Bek Kanan', x:290, y:470},
+          {id:'midL', label:'Gel. Kiri', x:80, y:320},
+          {id:'midC', label:'Gel. Tengah', x:200, y:340},
+          {id:'midR', label:'Gel. Kanan', x:320, y:320},
+          {id:'fwd', label:'Depan', x:200, y:150},
+        ],
+        '3-2-1': [
+          {id:'gk', label:'Kiper', x:200, y:565},
+          {id:'defL', label:'Bek Kiri', x:100, y:460},
+          {id:'defC', label:'Bek Tengah', x:200, y:480},
+          {id:'defR', label:'Bek Kanan', x:300, y:460},
+          {id:'midL', label:'Gel. Kiri', x:130, y:300},
+          {id:'midR', label:'Gel. Kanan', x:270, y:300},
+          {id:'fwd', label:'Depan', x:200, y:150},
+        ],
+        '2-2-2': [
+          {id:'gk', label:'Kiper', x:200, y:565},
+          {id:'defL', label:'Bek Kiri', x:110, y:460},
+          {id:'defR', label:'Bek Kanan', x:290, y:460},
+          {id:'midL', label:'Gel. Kiri', x:110, y:320},
+          {id:'midR', label:'Gel. Kanan', x:290, y:320},
+          {id:'fwdL', label:'Depan Kiri', x:140, y:160},
+          {id:'fwdR', label:'Depan Kanan', x:260, y:160},
+        ],
+      },
+    },
   };
+
+  function currentFormations(){ return SPORTS[currentSport].formations; }
+  function currentSlots(){ return currentFormations()[formation]; }
+  function currentMaxPlayers(){ return SPORTS[currentSport].maxPlayers; }
 
   const el = (tag, attrs, ...children) => {
     const isSvg = ['svg','g','circle','path','text','rect','line','image','clipPath','defs'].includes(tag);
@@ -530,7 +610,7 @@
 
   function playerById(id){ return players.find(p => p.id === id); }
 
-  function courtBackground(){
+  function courtBackground(courtType){
     const g = el('g',{});
     g.appendChild(el('rect',{x:8,y:8,width:384,height:604,rx:14,fill:'var(--court)',stroke:'var(--line)','stroke-width':2}));
     // halfway line
@@ -538,15 +618,21 @@
     // center circle
     g.appendChild(el('circle',{cx:200,cy:310,r:52,fill:'none',stroke:'var(--line)','stroke-width':2,opacity:0.6}));
     g.appendChild(el('circle',{cx:200,cy:310,r:3,fill:'var(--line)',opacity:0.6}));
-    // futsal penalty arcs (quarter circles from each post, radius 6m scaled ~70) - top goal
-    g.appendChild(el('path',{d:'M 130 8 A 70 70 0 0 0 200 78', fill:'none', stroke:'var(--line)', 'stroke-width':2, opacity:0.6}));
-    g.appendChild(el('path',{d:'M 200 78 A 70 70 0 0 0 270 8', fill:'none', stroke:'var(--line)', 'stroke-width':2, opacity:0.6}));
-    g.appendChild(el('line',{x1:130,y1:8,x2:130,y2:8,stroke:'var(--line)'}));
-    // straight connecting line under top arc
-    g.appendChild(el('line',{x1:130,y1:8,x2:130,y2:8,stroke:'none'}));
-    // bottom goal arcs
-    g.appendChild(el('path',{d:'M 130 612 A 70 70 0 0 1 200 542', fill:'none', stroke:'var(--line)', 'stroke-width':2, opacity:0.6}));
-    g.appendChild(el('path',{d:'M 200 542 A 70 70 0 0 1 270 612', fill:'none', stroke:'var(--line)', 'stroke-width':2, opacity:0.6}));
+
+    if (courtType === 'soccer'){
+      // rectangular penalty + goal boxes, top and bottom
+      g.appendChild(el('rect',{x:110,y:8,width:180,height:70,fill:'none',stroke:'var(--line)','stroke-width':2,opacity:0.6}));
+      g.appendChild(el('rect',{x:155,y:8,width:90,height:30,fill:'none',stroke:'var(--line)','stroke-width':2,opacity:0.6}));
+      g.appendChild(el('rect',{x:110,y:542,width:180,height:70,fill:'none',stroke:'var(--line)','stroke-width':2,opacity:0.6}));
+      g.appendChild(el('rect',{x:155,y:582,width:90,height:30,fill:'none',stroke:'var(--line)','stroke-width':2,opacity:0.6}));
+    } else {
+      // futsal penalty arcs (quarter circles from each post, radius 6m scaled ~70) - top goal
+      g.appendChild(el('path',{d:'M 130 8 A 70 70 0 0 0 200 78', fill:'none', stroke:'var(--line)', 'stroke-width':2, opacity:0.6}));
+      g.appendChild(el('path',{d:'M 200 78 A 70 70 0 0 0 270 8', fill:'none', stroke:'var(--line)', 'stroke-width':2, opacity:0.6}));
+      // bottom goal arcs
+      g.appendChild(el('path',{d:'M 130 612 A 70 70 0 0 1 200 542', fill:'none', stroke:'var(--line)', 'stroke-width':2, opacity:0.6}));
+      g.appendChild(el('path',{d:'M 200 542 A 70 70 0 0 1 270 612', fill:'none', stroke:'var(--line)', 'stroke-width':2, opacity:0.6}));
+    }
     // goals
     g.appendChild(el('rect',{x:170,y:2,width:60,height:8,fill:'var(--line)',opacity:0.8}));
     g.appendChild(el('rect',{x:170,y:610,width:60,height:8,fill:'var(--line)',opacity:0.8}));
@@ -556,9 +642,9 @@
   function renderCourt(){
     const svg = document.getElementById('court');
     svg.innerHTML = '';
-    svg.appendChild(courtBackground());
+    svg.appendChild(courtBackground(SPORTS[currentSport].courtType));
 
-    const slots = FORMATIONS[formation];
+    const slots = currentSlots();
     const JERSEY_D = 'M -18,-20 C -24,-22 -30,-16 -28,-8 L -22,2 L -16,-4 L -16,24 L 16,24 L 16,-4 L 22,2 L 28,-8 C 30,-16 24,-22 18,-20 L 8,-24 Q 0,-16 -8,-24 Z';
     slots.forEach(slot => {
       const pid = assignments[slot.id];
@@ -664,7 +750,7 @@
     const bench = document.getElementById('sheetBench');
     starters.innerHTML = '';
     bench.innerHTML = '';
-    const slots = FORMATIONS[formation];
+    const slots = currentSlots();
     slots.forEach(slot => {
       const pid = assignments[slot.id];
       const p = pid ? playerById(pid) : null;
@@ -701,8 +787,8 @@
       nameInput.focus();
       return;
     }
-    if (players.length >= 10){
-      errEl.textContent = 'Maksimal 10 pemain (5 starter + 5 cadangan).';
+    if (players.length >= currentMaxPlayers()){
+      errEl.textContent = `Maksimal ${currentMaxPlayers()} pemain untuk ${SPORTS[currentSport].label}.`;
       errEl.style.display = 'block';
       return;
     }
@@ -717,8 +803,7 @@
   }
   // ---- export to image ----
   const SVG_NS = 'http://www.w3.org/2000/svg';
-  const FORMATION_LABEL = {'1-2-1':'1-2-1', '2-2':'2-2', '3-1':'3-1'};
-
+  
   function wrapText(str, maxChars){
     const words = str.split(' ');
     const lines = [];
@@ -806,7 +891,7 @@
     title.setAttribute('letter-spacing','0.5');
     title.setAttribute('fill','#EAF2EF');
     title.setAttribute('text-anchor','middle');
-    title.textContent = `LINE UP FUTSAL — FORMASI ${FORMATION_LABEL[formation]}`;
+    title.textContent = `LINE UP ${SPORTS[currentSport].label.toUpperCase()} — FORMASI ${formation}`;
     root.appendChild(title);
 
     clone.setAttribute('x', pad);
@@ -864,7 +949,7 @@
       const dataUrl = canvas.toDataURL(mime, 0.95);
       const a = document.createElement('a');
       a.href = dataUrl;
-      a.download = `lineup-futsal-${formation}.${format === 'jpg' ? 'jpg' : 'png'}`;
+      a.download = `lineup-${currentSport}-${formation}.${format === 'jpg' ? 'jpg' : 'png'}`;
       document.body.appendChild(a);
       a.click();
       a.remove();
@@ -882,25 +967,53 @@
   document.getElementById('pname').addEventListener('keydown', (e) => { if (e.key === 'Enter') addPlayer(); });
   document.getElementById('pnum').addEventListener('keydown', (e) => { if (e.key === 'Enter') addPlayer(); });
 
-  document.querySelectorAll('.formation-chip').forEach(btn => {
-    btn.addEventListener('click', () => {
-      formation = btn.dataset.f;
-      document.querySelectorAll('.formation-chip').forEach(b => b.classList.toggle('active', b===btn));
-      selectedSlot = null;
-      // keep assignments that still map to existing slot ids across formation change; drop the rest
-      const validIds = new Set(FORMATIONS[formation].map(s=>s.id));
-      Object.keys(assignments).forEach(s => { if (!validIds.has(s)) delete assignments[s]; });
-      renderCourt();
-      renderRoster();
-      renderBenchStrip();
-      renderListView();
+  function renderFormationChips(){
+    const row = document.getElementById('formationRow');
+    row.querySelectorAll('.formation-chip').forEach(b => b.remove());
+    Object.keys(currentFormations()).forEach(key => {
+      const btn = el('button',{class:'formation-chip' + (key===formation?' active':''), type:'button','data-f':key}, key);
+      btn.addEventListener('click', () => selectFormation(key));
+      row.appendChild(btn);
     });
+  }
+
+  function selectFormation(key){
+    formation = key;
+    selectedSlot = null;
+    // keep assignments that still map to existing slot ids across formation change; drop the rest
+    const validIds = new Set(currentSlots().map(s=>s.id));
+    Object.keys(assignments).forEach(s => { if (!validIds.has(s)) delete assignments[s]; });
+    renderFormationChips();
+    renderCourt();
+    renderRoster();
+    renderBenchStrip();
+    renderListView();
+  }
+
+  function selectSport(sportKey){
+    if (sportKey === currentSport) return;
+    currentSport = sportKey;
+    formation = Object.keys(SPORTS[sportKey].formations)[0];
+    assignments = {};
+    selectedSlot = null;
+    document.querySelectorAll('.sport-chip').forEach(b => b.classList.toggle('active', b.dataset.sport === sportKey));
+    renderFormationChips();
+    renderCourt();
+    renderRoster();
+    renderBenchStrip();
+    renderListView();
+  }
+
+  document.querySelectorAll('.sport-chip').forEach(btn => {
+    btn.addEventListener('click', () => selectSport(btn.dataset.sport));
   });
-  document.querySelector('.formation-chip[data-f="1-2-1"]').classList.add('active');
+  document.querySelector('.sport-chip[data-sport="futsal"]').classList.add('active');
+  renderFormationChips();
 
   document.getElementById('btnCourtView').addEventListener('click', () => {
     document.getElementById('btnCourtView').classList.add('active');
     document.getElementById('btnListView').classList.remove('active');
+    document.querySelector('.sport-row').style.display='flex';
     document.querySelector('.formation-row').style.display='flex';
     document.getElementById('courtLayout').style.display='grid';
     document.getElementById('listView').classList.remove('active');
@@ -908,6 +1021,7 @@
   document.getElementById('btnListView').addEventListener('click', () => {
     document.getElementById('btnListView').classList.add('active');
     document.getElementById('btnCourtView').classList.remove('active');
+    document.querySelector('.sport-row').style.display='none';
     document.querySelector('.formation-row').style.display='none';
     document.getElementById('courtLayout').style.display='none';
     renderListView();
